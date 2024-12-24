@@ -2,184 +2,121 @@ import random
 from colorama import Fore, Style, init
 init(autoreset=True)
 
-
-# def pause():           #debugging
-#   input("")
-
+def pause():           #debugging
+  input("")
 
 fileLocation = "/home/johnny/Downloads/VSCODE/5_letter_words_list.txt"
 contents = []
 with open(fileLocation, "r") as file:
   for word in file.readlines():
     contents.append(word.strip())
-secretWord = random.choice(contents)
 
-# allLeters = list("qwertyuiopasdfghjklzxcvbnm")      #failed attempt
-keyboardRow1 = "q w e r t y u i o p"
-keyboardRow2 = " a s d f g h j k l "
-keyboardRow3 = "   z x c v b n m   "
-newKeyboardRow1 = keyboardRow1
-newKeyboardRow2 = keyboardRow2
-newKeyboardRow3 = keyboardRow3
+keyboardRow1 = "qwertyuiop"
+keyboardRow2 = "asdfghjkl"
+keyboardRow3 = "zxcvbnm"
+keepPlaying = True
 
-wordFound = False
-attempts = 1
-guessedWords = []
+while keepPlaying:
+  secretWord = random.choice(contents)
 
-#########################################################################################
+  # variables kept for the entire game
+  # making default colors for keyboard rows. resets every game, but not every round
+  keyboardRow1Colors = {}
+  keyboardRow2Colors = {}
+  keyboardRow3Colors = {}
+  for c in keyboardRow1: keyboardRow1Colors[c] = "NOTHING"
+  for c in keyboardRow2: keyboardRow2Colors[c] = "NOTHING"
+  for c in keyboardRow3: keyboardRow3Colors[c] = "NOTHING"
+  wordFound = False
+  attempts = 0
+  guessedWords = []
 
-while not wordFound:
-  wordIsOk = False
-  while not wordIsOk:
-    guessedWord = input(Style.RESET_ALL + "Guess a 5 letter word: ").lower()
-    if guessedWord in contents: 
-      wordIsOk = True
-    else: print(" That is not a valid guess")
+  # game starts
+  while not wordFound:
+    # retriving the guess and if correct (or max attempts reached), ending the game
+    wordIsOk = False
+    while not wordIsOk:
+      guessedWord = input("Guess a 5 letter word: ").lower()
+      if guessedWord == "i give up": 
+        attempts = 6
+        break
+      elif guessedWord in contents:  
+        wordIsOk = True
+      else:
+        print(" That is not a valid guess")
+    if guessedWord == secretWord:
+      wordFound = True
+      print(f"{secretWord} was the word! It took you {attempts} attempts.")
+      wantsToPlayAgain = input("Do you want to play again? (y/n): ")
+      if wantsToPlayAgain == "y": keepPlaying = True
+      else:                       keepPlaying = False
+      break
+    elif attempts >= 6:
+      wordFound = True
+      print(f"Max amount of guesses taken. The word was {secretWord}")
+      wantsToPlayAgain = input("Do you want to play again? (y/n): ")
+      if wantsToPlayAgain == "y": keepPlaying = True
+      else:                       keepPlaying = False
+      break
+      
+
+    # variables that reset each round
+    letterColors = []
+    guessFormatted = ""
+
+    # placing the correct colors in the correct places for the guess. used for actually formatting the letters in the next step.
+    # looks like this: 
+    #  guessedWord = train
+    # letterColors = [('t', 'COLOR'), ('r', 'COLOR'), etc...]
+    for i in range(5):
+      c = guessedWord[i].lower()
+      if c in secretWord[i]: letterColors.append((c, "GREEN"))
+      elif c in secretWord:  letterColors.append((c, "YELLOW"))
+      else:                  letterColors.append((c, "BLACK"))
+
+    # actually formatting the letters with correct color. used for printing later on for the player
+    for item in letterColors:
+      match item[1]:
+        case "GREEN":  guessFormatted += Fore.GREEN + Style.BRIGHT + item[0] + Style.RESET_ALL
+        case "YELLOW": guessFormatted += Fore.YELLOW + Style.BRIGHT + item[0] + Style.RESET_ALL
+        case "BLACK":  guessFormatted += Fore.BLACK + Style.BRIGHT + item[0] + Style.RESET_ALL
+
+    # updating the keyboardRowXColors with correct colors based on the colors of the guess. used to format the keyboard in the next step
+    for letter, color in letterColors:
+      if    letter in keyboardRow1: keyboardRow1Colors[letter] = color
+      elif  letter in keyboardRow2: keyboardRow2Colors[letter] = color
+      else:                         keyboardRow3Colors[letter] = color
+
+
+    # actually printing the keyboard with correct colors. used for the player to see the letters theyve guessed
+    for c in keyboardRow1Colors:
+      match keyboardRow1Colors[c]:
+        case "NOTHING": print(c, end=" ")
+        case "GREEN": print(Fore.GREEN + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+        case "YELLOW": print(Fore.YELLOW + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+        case "BLACK": print(Fore.BLACK + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+    print("\n", end=" ")
+    for c in keyboardRow2Colors:
+      match keyboardRow2Colors[c]:
+        case "NOTHING": print(c, end=" ")
+        case "GREEN": print(Fore.GREEN + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+        case "YELLOW": print(Fore.YELLOW + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+        case "BLACK": print(Fore.BLACK + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+    print("\n", end="   ")
+    for c in keyboardRow3Colors:
+      match keyboardRow3Colors[c]:
+        case "NOTHING": print(c, end=" ")
+        case "GREEN": print(Fore.GREEN + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+        case "YELLOW": print(Fore.YELLOW + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+        case "BLACK": print(Fore.BLACK + Style.BRIGHT + c +Style.RESET_ALL, end=" ")
+    print()
+
+
+    ############################################################################
+    guessedWords.append(guessFormatted)
+    print(" Guesses:")
+    for word in guessedWords:
+      print(" " + word)
+    print("---------------------------")
   
-  if guessedWord == secretWord or attempts > 5:
-    wordFound = True    
-
-  coloredGuess = ""
-  guessedWordColors = ""
-  x=0
-  for c in guessedWord:
-    if c == secretWord[x]:
-      coloredChar = Fore.GREEN + Style.BRIGHT + c + Style.RESET_ALL
-      # coloredChar = f"G{c}"            #failed attempt again
-      guessedWordColors += "1"
-    elif c in secretWord:
-      coloredChar = Fore.YELLOW + Style.BRIGHT + c + Style.RESET_ALL
-      # coloredChar = f"Y{c}"            #failed attempt again
-      guessedWordColors += "2"
-    else:
-      coloredChar = Fore.BLACK + Style.BRIGHT + c + Style.RESET_ALL
-      # coloredChar = f"B{c}"            #failed attempt again
-      guessedWordColors += "3"
-    coloredGuess += coloredChar
-    
-
-    # replaces the letter in the keyboard with a capital so later it can change it into the correct color
-    if   c in keyboardRow1.lower(): newKeyboardRow1 = newKeyboardRow1.replace(c, c.upper())
-    elif c in keyboardRow2.lower(): newKeyboardRow2 = newKeyboardRow2.replace(c, c.upper())
-    elif c in keyboardRow3.lower(): newKeyboardRow3 = newKeyboardRow3.replace(c, c.upper())
-
-    '''# debugging
-    print(f"LETTER COLORS: {guessedWordColors}")
-    print(f"C: {c}")
-    print(f"COLORED C: {coloredChar}")
-    print(f"guessedWordColors[x]: {guessedWordColors[x]}")
-    pause()
-    print("KEYBOARD RIGHT NOW:")
-    print(f"  {newKeyboardRow1}")
-    print(f"  {newKeyboardRow2}")
-    print(f"  {newKeyboardRow3}")
-    pause()'''
-
-    '''# failed attempt 
-    # lettersToChangeWithFormatting = []
-    # lettersToChangeWithFormatting.append(coloredChar)'''
-
-    '''# failed attempt again
-    #this detects for any capitals in the keyboard row and replaces it with the correct color
-    lettersRow1 = ""
-    for l in newKeyboardRow1:
-      if l != l.lower() and l.lower() in allLeters: 
-        match guessedWordColors[x]:
-          case "1": lettersRow1 += Fore.GREEN + Style.BRIGHT + l.lower() + Style.RESET_ALL
-          case "2": lettersRow1 += Fore.YELLOW + Style.BRIGHT + l.lower() + Style.RESET_ALL
-          case "3": lettersRow1 += Fore.BLACK + Style.BRIGHT + l.lower() + Style.RESET_ALL
-      else: lettersRow1 += l
-      # # replacing any capitals in the OG keyboard (otherwise this part will change the color again)
-      # index = keyboardRow1.index(l)
-      # keyboardRow1 = keyboardRow1[:index] + l.lower() + keyboardRow1[index+1:]
-
-    lettersRow2 = ""
-    for l in newKeyboardRow2:
-      if l != l.lower() and l.lower() in allLeters: 
-        match guessedWordColors[x]:
-          case "1": lettersRow2 += Fore.GREEN + Style.BRIGHT + l.lower() + Style.RESET_ALL
-          case "2": lettersRow2 += Fore.YELLOW + Style.BRIGHT + l.lower() + Style.RESET_ALL
-          case "3": lettersRow2 += Fore.BLACK + Style.BRIGHT + l.lower() + Style.RESET_ALL
-      else: lettersRow2 += l
-      # index = keyboardRow2.index(l)
-      # keyboardRow2 = keyboardRow2[:index] + l.lower() + keyboardRow2[index+1:]
-    
-    lettersRow3 = ""
-    for l in newKeyboardRow3:
-      if l != l.lower() and l.lower() in allLeters: 
-        match guessedWordColors[x]:
-          case "1": lettersRow3 += Fore.GREEN + Style.BRIGHT + l.lower() + Style.RESET_ALL
-          case "2": lettersRow3 += Fore.YELLOW + Style.BRIGHT + l.lower() + Style.RESET_ALL
-          case "3": lettersRow3 += Fore.BLACK + Style.BRIGHT + l.lower() + Style.RESET_ALL
-      else: lettersRow3 += l
-      # index = keyboardRow3.index(l)
-      # keyboardRow3 = keyboardRow3[:index] + l.lower() + keyboardRow3[index+1:]
-
-    print("THE KEYBOARD USED TO PRINT: ")
-    print(f"  {lettersRow1}")
-    print(f"  {lettersRow2}")
-    print(f"  {lettersRow3}")
-    # print("OG KEYBOARD NOW: ")
-    # print(f"  {keyboardRow1}")
-    # print(f"  {keyboardRow2}")
-    # print(f"  {keyboardRow3}")
-    print("-----------------------------------------------------")
-    pause()'''
-    x+=1
-
-  '''another failed attempt
-  lettersRow1 = keyboardRow1
-  lettersRow2 = keyboardRow2
-  lettersRow3 = keyboardRow3
-  x=0
-  for c in lettersToChangeWithFormatting:
-    for l in keyboardRow1:
-      if l not in guessedWord:
-        print(l, end="")
-      else:
-        if   c == "G": print(Fore.GREEN + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-        elif c == "Y": print(Fore.YELLOW + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-        elif c == "B": print(Fore.BLACK + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-    print()
-    for l in keyboardRow2:
-      if l not in guessedWord:
-        print(l, end="")
-      else:
-        if   c == "G": print(Fore.GREEN + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-        elif c == "Y": print(Fore.YELLOW + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-        elif c == "B": print(Fore.BLACK + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-    print()
-    for l in keyboardRow3:
-      if l not in guessedWord:
-        print(l, end="")
-      else:
-        if   c == "G": print(Fore.GREEN + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-        elif c == "Y": print(Fore.YELLOW + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-        elif c == "B": print(Fore.BLACK + Style.BRIGHT + lettersToChangeWithFormatting[x+1] + Style.RESET_ALL, end="")
-
-
-
-
-  # for item in lettersToChangeWithFormatting: 
-  #   print(lettersToChangeWithFormatting)'''
-    
-############################################################################
   attempts+=1
-
-
-  guessedWords.append(coloredGuess)
-
-  print("---------------------------")
-  print(newKeyboardRow1)
-  print(newKeyboardRow2)
-  print(newKeyboardRow3)
-  print(" Guesses:")
-  for word in guessedWords:
-    print(" " + word)
-
-#########################################################################################
-
-if attempts > 5:
-  print(f"Max amount of guesses taken. The word was {secretWord}")
-else:
-  print(f"{secretWord} was the word! It took you {attempts} attempts.")
